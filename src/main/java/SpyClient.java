@@ -24,8 +24,9 @@ public class SpyClient {
             DataInputStream dIn = new DataInputStream(client.taskSocket.getInputStream());
 
             while (true) {
-                byte[] header = new byte[3];
-                dIn.readFully(header, 0, 3);
+                int length = dIn.readInt();
+                byte[] header = new byte[length];
+                dIn.readFully(header, 0, length);
                 String result = new String(header, StandardCharsets.UTF_8);
                 log.debug("Get new message from: " + SERVER_URL);
                 if (result.equals("SPH")) {
@@ -54,7 +55,8 @@ public class SpyClient {
             File file = this.loadImage(path);
             byte[] fileContent = Files.readAllBytes(file.toPath());
             DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
-            dos.writeInt(fileContent.length);
+            dos.writeInt(fileContent.length + 3);
+            dos.write("PHT".getBytes(StandardCharsets.UTF_8));
             dos.write(fileContent);
             dos.flush();
         } catch (IOException e) {
