@@ -1,14 +1,12 @@
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class SpyClient {
@@ -16,6 +14,7 @@ public class SpyClient {
 
     static final String SERVER_URL = "localhost";
     static final int SERVER_PORT = 9999;
+    static final String SEPARATOR = ":";
 
     public static void main(String... args) throws InterruptedException {
         SpyClient client = new SpyClient();
@@ -23,13 +22,16 @@ public class SpyClient {
             client.taskSocket = new Socket(SERVER_URL, SERVER_PORT);
             DataInputStream dIn = new DataInputStream(client.taskSocket.getInputStream());
 
+            client.register("test", "test");
+//            client.login("test2", "test2");
+
             while (true) {
                 int length = dIn.readInt();
                 byte[] header = new byte[length];
                 dIn.readFully(header, 0, length);
                 String result = new String(header, StandardCharsets.UTF_8);
                 log.debug("Get new message from: " + SERVER_URL);
-                if (result.equals("SPH")) {
+                if (result.equals(Header.PHOTO_REQUEST.toString())) {
                     Thread.sleep(2000);
                     log.info("Get SPH message, sending photo to server");
                     client.sendImage("/home/michal/Downloads/ted.jpeg");
@@ -56,8 +58,38 @@ public class SpyClient {
             byte[] fileContent = Files.readAllBytes(file.toPath());
             DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
             dos.writeInt(fileContent.length + 3);
-            dos.write("PHT".getBytes(StandardCharsets.UTF_8));
+            dos.write(Header.PHOTO.getValue().getBytes(StandardCharsets.UTF_8));
             dos.write(fileContent);
+            dos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void register(String login, String password) {
+        try {
+            DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
+            dos.writeInt(3 + login.getBytes(StandardCharsets.UTF_8).length + password.getBytes(StandardCharsets.UTF_8).length + 2);
+            dos.write(Header.REGISTER.getValue().getBytes(StandardCharsets.UTF_8));
+            dos.write(SEPARATOR.getBytes(StandardCharsets.UTF_8));
+            dos.write(login.getBytes(StandardCharsets.UTF_8));
+            dos.write(SEPARATOR.getBytes(StandardCharsets.UTF_8));
+            dos.write(password.getBytes(StandardCharsets.UTF_8));
+            dos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void login(String login, String password) {
+        try {
+            DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
+            dos.writeInt(3 + login.getBytes(StandardCharsets.UTF_8).length + password.getBytes(StandardCharsets.UTF_8).length + 2);
+            dos.write(Header.AUTHENTICATE.getValue().getBytes(StandardCharsets.UTF_8));
+            dos.write(SEPARATOR.getBytes(StandardCharsets.UTF_8));
+            dos.write(login.getBytes(StandardCharsets.UTF_8));
+            dos.write(SEPARATOR.getBytes(StandardCharsets.UTF_8));
+            dos.write(password.getBytes(StandardCharsets.UTF_8));
             dos.flush();
         } catch (IOException e) {
             e.printStackTrace();
