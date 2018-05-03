@@ -23,6 +23,19 @@ public class SpyClient {
             client.taskSocket = new Socket(SERVER_URL, SERVER_PORT);
             DataInputStream dIn = new DataInputStream(client.taskSocket.getInputStream());
 
+            // REGISTRATION REQUEST
+            byte[] regHeader = "REG".getBytes();
+            byte[] user = "tes4".getBytes();
+            byte[] password = "12345".getBytes();
+            DataOutputStream dos = new DataOutputStream(client.taskSocket.getOutputStream());
+            dos.writeInt(regHeader.length + user.length + 2 * 4 + password.length); // 2 * 4 = 2 * int
+            dos.write(regHeader);
+            dos.writeInt(user.length);
+            dos.write(user);
+            dos.writeInt(password.length);
+            dos.write(password);
+            dos.flush();
+
             while (true) {
                 int length = dIn.readInt();
                 byte[] header = new byte[length];
