@@ -42,7 +42,7 @@ public class SpyClient {
                 dIn.readFully(header, 0, length);
                 String result = new String(header, StandardCharsets.UTF_8);
                 log.debug("Get new message from: " + SERVER_URL);
-                if (result.equals("SPH")) {
+                if (result.equals(Header.PHOTO_REQUEST.toString())) {
                     Thread.sleep(2000);
                     log.info("Get SPH message, sending photo to server");
                     client.sendImage("/home/michal/Downloads/ted.jpeg");
@@ -69,7 +69,7 @@ public class SpyClient {
             byte[] fileContent = Files.readAllBytes(file.toPath());
             DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
             dos.writeInt(fileContent.length + 3);
-            dos.write("PHT".getBytes(StandardCharsets.UTF_8));
+            dos.write(Header.PHOTO.getValue().getBytes(StandardCharsets.UTF_8));
             dos.write(fileContent);
             dos.flush();
         } catch (IOException e) {
