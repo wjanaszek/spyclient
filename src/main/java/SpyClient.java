@@ -23,7 +23,8 @@ public class SpyClient {
 
             // use register, login needs id
             client.register("test", "test");
-            // client.login("test2", "test2");
+            // client should fetch userID
+            // client.login(userID, "test2");
 
             while (true) {
                 int length = dIn.readInt();
@@ -84,17 +85,16 @@ public class SpyClient {
         }
     }
 
-    void login(String login, String password) {
+    void login(int login, String password) {
         try {
             DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
             // we are adding 2 ints (because we are sending 2 fields except header - login and password), so we have to extend our message by 2 * 4
-            dos.writeInt(3 + login.getBytes(StandardCharsets.UTF_8).length + password.getBytes(StandardCharsets.UTF_8).length + 2 * 4);
+            dos.writeInt(3 + 4 + password.getBytes(StandardCharsets.UTF_8).length + 4);
             dos.write(Header.AUTHENTICATE.getValue().getBytes(StandardCharsets.UTF_8));
+            // int field does not have length field
+            dos.writeInt(login);
             // before every field we have to add its length, otherwise parser could not read that
-            dos.writeInt(login.getBytes(StandardCharsets.UTF_8).length);
-            dos.write(login.getBytes(StandardCharsets.UTF_8));
-            // before every field we have to add its length, otherwise parser could not read that
-            dos.writeInt(login.getBytes(StandardCharsets.UTF_8).length);
+            dos.writeInt(password.getBytes(StandardCharsets.UTF_8).length);
             dos.write(password.getBytes(StandardCharsets.UTF_8));
             dos.flush();
         } catch (IOException e) {
