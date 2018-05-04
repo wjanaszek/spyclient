@@ -1,14 +1,12 @@
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class SpyClient {
@@ -23,18 +21,9 @@ public class SpyClient {
             client.taskSocket = new Socket(SERVER_URL, SERVER_PORT);
             DataInputStream dIn = new DataInputStream(client.taskSocket.getInputStream());
 
-            // REGISTRATION REQUEST
-            byte[] regHeader = "REG".getBytes();
-            byte[] user = "tes4".getBytes();
-            byte[] password = "12345".getBytes();
-            DataOutputStream dos = new DataOutputStream(client.taskSocket.getOutputStream());
-            dos.writeInt(regHeader.length + user.length + 2 * 4 + password.length); // 2 * 4 = 2 * int
-            dos.write(regHeader);
-            dos.writeInt(user.length);
-            dos.write(user);
-            dos.writeInt(password.length);
-            dos.write(password);
-            dos.flush();
+            // use register, login needs id
+            client.register("test", "test");
+            // client.login("test2", "test2");
 
             while (true) {
                 int length = dIn.readInt();
@@ -71,6 +60,42 @@ public class SpyClient {
             dos.writeInt(fileContent.length + 3);
             dos.write(Header.PHOTO.getValue().getBytes(StandardCharsets.UTF_8));
             dos.write(fileContent);
+            dos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void register(String login, String password) {
+        try {
+            DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
+            // we are adding 2 ints (because we are sending 2 fields except header - login and password), so we have to extend our message by 2 * 4
+            dos.writeInt(3 + login.getBytes(StandardCharsets.UTF_8).length + password.getBytes(StandardCharsets.UTF_8).length + 2 * 4);
+            dos.write(Header.REGISTER.getValue().getBytes(StandardCharsets.UTF_8));
+            // before every field we have to add its length, otherwise parser could not read that
+            dos.writeInt(login.getBytes(StandardCharsets.UTF_8).length);
+            dos.write(login.getBytes(StandardCharsets.UTF_8));
+            // before every field we have to add its length, otherwise parser could not read that
+            dos.writeInt(password.getBytes(StandardCharsets.UTF_8).length);
+            dos.write(password.getBytes(StandardCharsets.UTF_8));
+            dos.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void login(String login, String password) {
+        try {
+            DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
+            // we are adding 2 ints (because we are sending 2 fields except header - login and password), so we have to extend our message by 2 * 4
+            dos.writeInt(3 + login.getBytes(StandardCharsets.UTF_8).length + password.getBytes(StandardCharsets.UTF_8).length + 2 * 4);
+            dos.write(Header.AUTHENTICATE.getValue().getBytes(StandardCharsets.UTF_8));
+            // before every field we have to add its length, otherwise parser could not read that
+            dos.writeInt(login.getBytes(StandardCharsets.UTF_8).length);
+            dos.write(login.getBytes(StandardCharsets.UTF_8));
+            // before every field we have to add its length, otherwise parser could not read that
+            dos.writeInt(login.getBytes(StandardCharsets.UTF_8).length);
+            dos.write(password.getBytes(StandardCharsets.UTF_8));
             dos.flush();
         } catch (IOException e) {
             e.printStackTrace();
