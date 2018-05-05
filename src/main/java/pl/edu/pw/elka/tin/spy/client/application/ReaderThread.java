@@ -6,16 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Slf4j
 @AllArgsConstructor
 public class ReaderThread implements Runnable {
 	private Socket socket;
-	private final Queue<byte[]> rawMessageQueue;
+	private final ConcurrentLinkedQueue<byte[]> rawMessageQueue;
 	private DataInputStream inputStream;
 
-	public ReaderThread(Socket inSocket, Queue<byte[]> inQueue) {
+	public ReaderThread(Socket inSocket, ConcurrentLinkedQueue<byte[]> inQueue) {
 		this.socket = inSocket;
 		this.rawMessageQueue = inQueue;
 
