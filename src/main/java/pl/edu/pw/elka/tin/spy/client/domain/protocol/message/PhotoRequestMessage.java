@@ -7,7 +7,7 @@ import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 
 @Data
 @RequiredArgsConstructor
-public class PhotoRequestMessage implements Message{
+public class PhotoRequestMessage implements Message {
 
 	@Getter
 	private Header header = Header.REGISTRATION_REQUEST;

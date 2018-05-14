@@ -7,18 +7,16 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class SimpleMessage implements Message, SendMessage {
-    @Getter
-    private Header header;
+	public static SimpleMessage UnrecognisedHeader = new SimpleMessage(Header.UNRECOGNISED);
+	@Getter
+	private Header header;
 
-    public static SimpleMessage PhotoRequest = new SimpleMessage(Header.PHOTO_REQUEST);
-    public static SimpleMessage UnrecognisedHeader = new SimpleMessage(Header.UNRECOGNISED);
-
-    public SimpleMessage(Header header) {
-        this.header = header;
-    }
+	public SimpleMessage(Header header) {
+		this.header = header;
+	}
 
 
-    @Override
+	@Override
 	public byte[] toByteArray() {
 		byte[] header = this.header.getValue().getBytes(StandardCharsets.UTF_8);
 		ByteBuffer bb = ByteBuffer.allocate(messageSizeFieldInBytes + header.length);

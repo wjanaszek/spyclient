@@ -7,12 +7,12 @@ import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 @Data
 @RequiredArgsConstructor
 public class SuccessfulRegistrationMessage implements Message {
-    private Header header = Header.SUCCESSFUL_REGISTRATION;
-    private final int clientID;
+	private final int clientID;
+	private Header header = Header.SUCCESSFUL_REGISTRATION;
 
-    @Override
-    public Header header() {
-        return header;
-    }
+	@Override
+	public Header header() {
+		return header;
+	}
 
 }

@@ -7,12 +7,12 @@ import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 @Data
 @RequiredArgsConstructor
 public class SuccessfulAuthMessage implements Message {
-    private Header header = Header.SUCCESSFUL_AUTH;
-    private final String secret;
+	private final byte[] secret;
+	private Header header = Header.SUCCESSFUL_AUTH;
 
-    @Override
-    public Header header() {
-        return header;
-    }
+	@Override
+	public Header header() {
+		return header;
+	}
 
 }

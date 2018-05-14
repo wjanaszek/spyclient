@@ -6,6 +6,7 @@ import org.bytedeco.javacv.*;
 import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 import pl.edu.pw.elka.tin.spy.client.domain.protocol.RawMessageParser;
 import pl.edu.pw.elka.tin.spy.client.domain.protocol.message.*;
+import pl.edu.pw.elka.tin.spy.client.encryption.XOREncryptor;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -19,16 +20,21 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Slf4j
 @AllArgsConstructor
-public class WriterThread implements Runnable{
+public class WriterThread implements Runnable {
+	private final ConcurrentLinkedQueue<byte[]> rawMessageQueue;
 	private Socket socket;
 	private DataOutputStream outputStream;
-	private final ConcurrentLinkedQueue<byte[]> rawMessageQueue;
 	private Queue<Message> outputMessageQueue;
+
+	private XOREncryptor encryptor;
+	private byte[] secret;
 
 	public WriterThread(Socket outSocket, ConcurrentLinkedQueue<byte[]> outQueue) {
 		this.socket = outSocket;
 		this.rawMessageQueue = outQueue;
 		this.outputMessageQueue = new LinkedList<>();
+		this.secret = null;
+		this.encryptor = new XOREncryptor();
 
 		try {
 			this.outputStream = new DataOutputStream(socket.getOutputStream());
@@ -37,19 +43,26 @@ public class WriterThread implements Runnable{
 		}
 	}
 
+	public static String getPropertiesDirectoryPath() {
+		String homeDirectory = System.getProperty("user.home");
+		String propertiesDirectory = homeDirectory + File.separator + "SpyClient";
+		File newDirectory = new File(propertiesDirectory);
+		newDirectory.mkdir();
+
+		return propertiesDirectory;
+	}
+
 	@Override
 	public void run() {
 		log.info("Starting Writer Thread");
 
 		createPropertiesFile();
 		if (!isRegistered())
-			sendMessage(new RegistrationRequestMessage("test1","test"));
+			sendMessage(new RegistrationRequestMessage("Martynka", "dupadupa"));
 		else
-			sendMessage(new AuthRequestMessage(clientId(),"test"));
+			sendMessage(new AuthRequestMessage(clientId(), "dupadupa"));
 
-		//register("test5", "test");
-
-		while(true){
+		while (true) {
 			if (rawMessageQueue.size() > 0) {
 				List<byte[]> rawMessages = new LinkedList<>();
 				while (rawMessageQueue.size() > 0) {
@@ -80,29 +93,45 @@ public class WriterThread implements Runnable{
 	}
 
 	private void handleMessage(Message message) {
-		switch (message.header()){
+		switch (message.header()) {
 			case PHOTO_REQUEST: {
 				log.info("Get PHOTO message, sending photo to server");
 				byte[] photo = takePhoto();
-				sendMessage(new PhotoMessage(Header.PHOTO,photo));
+				sendMessage(new PhotoMessage(Header.PHOTO, photo));
+				break;
+			}
+			case UNAUTHORIZED_REQUEST: {
+				log.info("Get UNAUTHORIZED_REQUEST message");
+				break;
 			}
 			case SUCCESSFUL_REGISTRATION: {
 				log.info("Get REGISTRATION_SUCCESSFUL message, saving registration info");
-				SuccessfulRegistrationMessage successMessage = (SuccessfulRegistrationMessage)message;
+				SuccessfulRegistrationMessage successMessage = (SuccessfulRegistrationMessage) message;
 				int clientId = successMessage.getClientID();
-				saveAsRegistered(clientId);
+				saveRegisteredInfo(clientId, "true");
+				break;
 			}
-			case SUCCESSFUL_AUTH:{
+			case REGISTRATION_FAILED: {
+				log.info("Get REGISTRATION_FAILED message, saving registration info");
+				saveRegisteredInfo(-1, "false");
+				break;
+			}
+			case SUCCESSFUL_AUTH: {
 				log.info("Get SUCCESSFUL_AUTH message");
-				SuccessfulAuthMessage successMessage = (SuccessfulAuthMessage)message;
-				String secret = successMessage.getSecret();
+				SuccessfulAuthMessage successMessage = (SuccessfulAuthMessage) message;
+				secret = successMessage.getSecret();
 				saveAsActive(secret);
+				break;
+			}
+			case AUTH_FAILED: {
+				log.info("Get AUTH_FAILED message");
+				break;
 			}
 		}
 	}
 
-	private void saveAsActive(String secret) {
-		setProperty("secret",secret);
+	private void saveAsActive(byte[] secret) {
+		setProperty("secret", new String(secret));
 	}
 
 	private byte[] takePhoto() {
@@ -127,12 +156,13 @@ public class WriterThread implements Runnable{
 		return image;
 	}
 
-	private void saveAsRegistered(int clientId) {
-		setProperty("clientId",Integer.toString(clientId));
-		setProperty("registered", "true");
+	private void saveRegisteredInfo(int clientId, String regValue) {
+		if (clientId > 0)
+			setProperty("clientId", Integer.toString(clientId));
+		setProperty("registered", regValue);
 	}
 
-	private void setProperty(String name, String value){
+	private void setProperty(String name, String value) {
 		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
 		Properties properties = new Properties();
 
@@ -140,8 +170,8 @@ public class WriterThread implements Runnable{
 		try {
 			properties.setProperty(name, value);
 			File file = new File(propertiesPath);
-			output = new FileOutputStream(propertiesPath,true);
-			properties.store(output,null);
+			output = new FileOutputStream(propertiesPath, true);
+			properties.store(output, null);
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
@@ -155,18 +185,9 @@ public class WriterThread implements Runnable{
 		}
 	}
 
-	public static String getPropertiesDirectoryPath(){
-		String homeDirectory = System.getProperty("user.home");
-		String propertiesDirectory = homeDirectory + File.separator + "SpyClient";
-		File newDirectory = new File(propertiesDirectory);
-		newDirectory.mkdir();
-
-		return propertiesDirectory;
-	}
-
 	private void sendMessage(SendMessage message) {
 		try {
-			outputStream.write(message.toByteArray());
+			outputStream.write(encryptor.encrypt(message.toByteArray(), secret));
 		} catch (IOException e) {
 			e.printStackTrace();
 			log.error("Failed to send message");
@@ -186,7 +207,7 @@ public class WriterThread implements Runnable{
 		return Integer.parseInt(getProperty("clientId"));
 	}
 
-	private String getProperty(String propertyName){
+	private String getProperty(String propertyName) {
 		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
 		Properties properties = new Properties();
 		String property = null;

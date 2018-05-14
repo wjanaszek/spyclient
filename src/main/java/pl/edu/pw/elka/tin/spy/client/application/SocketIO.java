@@ -23,13 +23,11 @@ public class SocketIO {
 	}
 
 	public boolean isConnected() {
-		if (socket == null){
+		if (socket == null) {
 			return false;
-		}
-		else if (!socket.isClosed()){
+		} else if (!socket.isClosed()) {
 			return true;
-		}
-		else {
+		} else {
 			socket = null;
 			return false;
 		}
