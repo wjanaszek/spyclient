@@ -12,7 +12,11 @@ public class XOREncryptor {
 
 			int secretLength = secret.length;
 			for (int i = 0; i < message.length; i++) {
-				byte b = (byte) (message[i] ^ secret[8 % secretLength]);
+				byte b;
+				if (i<4)
+					b = message[i];
+				else
+					b = (byte) (message[i] ^ secret[8 % secretLength]);
 				buffer.put(b);
 			}
 			return buffer.array();

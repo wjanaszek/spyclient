@@ -10,7 +10,7 @@ import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 public class PhotoRequestMessage implements Message {
 
 	@Getter
-	private Header header = Header.REGISTRATION_REQUEST;
+	private Header header = Header.PHOTO_REQUEST;
 
 	@Override
 	public Header header() {

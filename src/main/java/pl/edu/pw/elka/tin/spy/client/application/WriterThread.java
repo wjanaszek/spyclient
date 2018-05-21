@@ -3,7 +3,6 @@ package pl.edu.pw.elka.tin.spy.client.application;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacv.*;
-import pl.edu.pw.elka.tin.spy.client.domain.protocol.Header;
 import pl.edu.pw.elka.tin.spy.client.domain.protocol.RawMessageParser;
 import pl.edu.pw.elka.tin.spy.client.domain.protocol.message.*;
 import pl.edu.pw.elka.tin.spy.client.encryption.XOREncryptor;
@@ -58,9 +57,10 @@ public class WriterThread implements Runnable {
 
 		createPropertiesFile();
 		if (!isRegistered())
-			sendMessage(new RegistrationRequestMessage("Martynka", "dupadupa"));
+			sendMessage(new RegistrationRequestMessage("Martynka", "12345"));
 		else
-			sendMessage(new AuthRequestMessage(clientId(), "dupadupa"));
+			sendMessage(new AuthRequestMessage(clientId(), "12345"));
+
 
 		while (true) {
 			if (rawMessageQueue.size() > 0) {
@@ -97,7 +97,7 @@ public class WriterThread implements Runnable {
 			case PHOTO_REQUEST: {
 				log.info("Get PHOTO message, sending photo to server");
 				byte[] photo = takePhoto();
-				sendMessage(new PhotoMessage(Header.PHOTO, photo));
+				sendMessage(new PhotoMessage(photo));
 				break;
 			}
 			case UNAUTHORIZED_REQUEST: {
@@ -162,28 +162,6 @@ public class WriterThread implements Runnable {
 		setProperty("registered", regValue);
 	}
 
-	private void setProperty(String name, String value) {
-		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
-		Properties properties = new Properties();
-
-		FileOutputStream output = null;
-		try {
-			properties.setProperty(name, value);
-			File file = new File(propertiesPath);
-			output = new FileOutputStream(propertiesPath, true);
-			properties.store(output, null);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (output != null) {
-				try {
-					output.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
 
 	private void sendMessage(SendMessage message) {
 		try {
@@ -209,6 +187,28 @@ public class WriterThread implements Runnable {
 
 	private String getProperty(String propertyName) {
 		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
+//		String property = null;
+//
+//		File file = new File(propertiesPath);
+//
+//		PropertiesBuilderParameters propertyParameters = new Parameters().properties();
+//		propertyParameters.setFile(file);
+//
+//		FileBasedConfigurationBuilder<PropertiesConfiguration> builder = new FileBasedConfigurationBuilder<PropertiesConfiguration>(
+//				PropertiesConfiguration.class);
+//
+//		builder.configure(propertyParameters);
+//		try
+//		{
+//			PropertiesConfiguration config = builder.getConfiguration();
+//			property = config.getString(propertyName);
+//
+//		}
+//		catch (ConfigurationException cex) {
+//			log.error("Could not write to configuration file");
+//		}
+
+
 		Properties properties = new Properties();
 		String property = null;
 		InputStream input = null;
@@ -230,6 +230,46 @@ public class WriterThread implements Runnable {
 			}
 		}
 		return property;
+	}
+	private void setProperty(String name, String value) {
+		String propertiesPath = getPropertiesDirectoryPath() + File.separator + "client.properties";
+
+//		Parameters params = new Parameters();
+//		Configurations configs = new Configurations();
+//		FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+//				new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+//						.configure(params.fileBased()
+//								.setFile(new File(propertiesPath)));
+//		try
+//		{
+//			PropertiesConfiguration config = builder.getConfiguration();
+//			config.addProperty(name, value);
+//
+//			builder.save();
+//		}
+//		catch (ConfigurationException cex) {
+//			log.error("Could not write to configuration file");
+//		}
+
+		Properties properties = new Properties();
+
+		FileOutputStream output = null;
+		try {
+			properties.setProperty(name, value);
+			File file = new File(propertiesPath);
+			output = new FileOutputStream(propertiesPath, true);
+			properties.store(output, null);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (output != null) {
+				try {
+					output.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 }

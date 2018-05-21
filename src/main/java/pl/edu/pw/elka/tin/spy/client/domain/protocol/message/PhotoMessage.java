@@ -16,6 +16,10 @@ public class PhotoMessage implements Message, SendMessage {
 	private Header header = Header.PHOTO;
 	private byte[] photo;
 
+	public PhotoMessage(byte[] photo) {
+		this.photo = photo;
+	}
+
 	@Override
 	public Header header() {
 		return header;
