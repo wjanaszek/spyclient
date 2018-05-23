@@ -58,9 +58,8 @@ public class WriterThread implements Runnable {
 		createPropertiesFile();
 		if (!isRegistered())
 			sendMessage(new RegistrationRequestMessage("Martynka", "12345"));
-		else
-			sendMessage(new AuthRequestMessage(clientId(), "12345"));
 
+		authenticate();
 
 		while (true) {
 			if (rawMessageQueue.size() > 0) {
@@ -80,6 +79,10 @@ public class WriterThread implements Runnable {
 				handleMessage(newMessage);
 			}
 		}
+	}
+
+	private void authenticate() {
+		sendMessage(new AuthRequestMessage(clientId(), "12345"));
 	}
 
 	private void createPropertiesFile() {
