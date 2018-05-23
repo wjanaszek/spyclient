@@ -58,8 +58,9 @@ public class WriterThread implements Runnable {
 		createPropertiesFile();
 		if (!isRegistered())
 			sendMessage(new RegistrationRequestMessage("Martynka", "12345"));
-
-		authenticate();
+		else {
+			authenticate();
+		}
 
 		while (true) {
 			if (rawMessageQueue.size() > 0) {
@@ -77,6 +78,12 @@ public class WriterThread implements Runnable {
 
 			if (newMessage != null) {
 				handleMessage(newMessage);
+			}
+
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -112,6 +119,7 @@ public class WriterThread implements Runnable {
 				SuccessfulRegistrationMessage successMessage = (SuccessfulRegistrationMessage) message;
 				int clientId = successMessage.getClientID();
 				saveRegisteredInfo(clientId, "true");
+				authenticate();
 				break;
 			}
 			case REGISTRATION_FAILED: {
