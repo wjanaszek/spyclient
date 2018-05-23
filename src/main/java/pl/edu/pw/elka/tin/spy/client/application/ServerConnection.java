@@ -17,7 +17,7 @@ public class ServerConnection implements Runnable {
 	private ThreadPoolExecutor poolExecutor;
 
 	public ServerConnection(String serverUrl, int serverPort) {
-		poolExecutor = new ThreadPoolExecutor(30, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<>());
+		poolExecutor = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<>());
 
 		try {
 			taskSocket = new Socket(serverUrl, serverPort);
