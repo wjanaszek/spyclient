@@ -43,7 +43,7 @@ public class WriterThread implements Runnable {
 	}
 
 	public static String getPropertiesDirectoryPath() {
-		String homeDirectory = System.getProperty("user.home");
+		String homeDirectory = System.getProperty("user.dir");
 		String propertiesDirectory = homeDirectory + File.separator + "SpyClient";
 		File newDirectory = new File(propertiesDirectory);
 		newDirectory.mkdir();
@@ -151,6 +151,12 @@ public class WriterThread implements Runnable {
 			baos.close();
 		} catch (FrameGrabber.Exception | IOException e) {
 			log.error("Couldn't grab a photo");
+		} finally {
+			try {
+				grabber.stop();
+			} catch (FrameGrabber.Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		return image;
